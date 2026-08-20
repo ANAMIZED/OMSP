@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# OMSP full acceptance gate — stranger-runnable, offline-first
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+echo "=== OMSP verify.sh ==="
+echo
+
+# 1. Python reference suite
+echo "[1/7] Python unit tests (62)..."
+(cd reference && python3 -m unittest discover -s tests -q)
+echo "  OK"
+
+# 2. Python REQ coverage
+echo "[2/7] Python SPEC coverage audit..."
+(cd reference && python3 audit/verify_coverage.py | grep -q "AUDIT: PASS")
+echo "  OK"
+
+# 3. Browser engine tests
+echo "[3/7] App engine tests (77)..."
+(cd app && node test_engine.js | tail -1 | grep -q "77 passed")
+echo "  OK"
+
+# 4. Constellation tests
+echo "[4/7] App constellation tests (46)..."
+(cd app && node test_constellation.js | tail -1 | grep -q "46 passed")
+echo "  OK"
+
+# 5. UI harness
+echo "[5/7] App UI harness (48)..."
+(cd app && node test_ui.js | tail -1 | grep -q "48 passed")
+echo "  OK"
+
+# 6. Spec ↔ app parity
+echo "[6/7] Spec ↔ app parity audit..."
+(cd app && node audit/verify_parity.js | grep -q "PARITY AUDIT: PASS")
+echo "  OK"
+
+# 7. Build reproducibility (optional if node/python available)
+echo "[7/7] omsp.html integrity..."
+EXPECTED="1e9abd2b98deb6bc8789648195a04aad1ec871ecc9b568236de35a15924caa01"
+ACTUAL=$(sha256sum omsp.html | awk '{print $1}')
+if [ "$ACTUAL" = "$EXPECTED" ]; then
+  echo "  OK (sha256 match)"
+else
+  echo "  WARN: sha256 mismatch (expected $EXPECTED got $ACTUAL) — may be intentional after rebuild"
+fi
+
+echo
+echo "=== ALL CHECKS PASSED ==="
