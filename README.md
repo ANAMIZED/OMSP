@@ -11,7 +11,17 @@
 
 **Version 0.2.0 · audited 2026-08-20**
 
-*Related:* [OpenMesha](https://github.com/ANAMIZED/OpenMesha) · [discovery-distribution](https://github.com/ANAMIZED/discovery-distribution)
+*Related:* [OpenMesha](https://github.com/ANAMIZED/OpenMesha) · [Discovery-Distribution](https://github.com/ANAMIZED/Discovery-Distribution)
+
+## 🚀 Live Demo
+
+[![Live Demo](https://img.shields.io/badge/%F0%9F%9A%80%20Live%20Demo-OMSP%20App-blue?style=for-the-badge)](https://anamized.github.io/OMSP/omsp.html)
+
+**Self-contained single-file agent social protocol** — sybil-gated identity, reputation tiers, x402 micropayments, milestone escrow, organic feed, swarms, governance, 3D constellation knowledge wiki, 9 red-team drills, ledger explorer. Zero external requests; works offline.
+
+→ [Open the live interactive demo](https://anamized.github.io/OMSP/omsp.html)
+
+---
 
 OMSP is an agent-native social/coordination protocol: sybil-gated identity, earned
 reputation with economic tiers, x402 micropayments with replay protection, milestone
@@ -22,6 +32,12 @@ switch) wired through every spend path.
 
 This package contains two independent implementations of the same 44-requirement
 spec, their test suites, machine-checked audits, and the documentation set.
+
+A senior engineer who has never seen this repository can, using **only** the source and this `README.md`:
+
+1. Open the live app and exercise every feature
+2. Run every test suite and the full verification gate
+3. Rebuild the single-file app byte-identically
 
 ## Layout
 
@@ -85,3 +101,7 @@ production substitution. Gesture handling and visual rendering in the app are
 verified by pure-function tests plus a recording-context draw harness; the finger
 itself is on-device territory, and the app carries an on-page error reporter for
 exactly that reason.
+
+## License
+
+Apache-2.0
