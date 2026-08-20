@@ -1,0 +1,76 @@
+name: Deploy Live Demo (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract exact audited package
+        run: |
+          unzip -q -o omsp-complete.zip
+          if [ -d omsp-complete ]; then
+            shopt -s dotglob
+            mv omsp-complete/* .
+            rmdir omsp-complete || true
+            shopt -u dotglob
+          fi
+          # Ensure Pages entry points
+          touch .nojekyll
+          cat > index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta http-equiv="refresh" content="0; url=omsp.html">
+            <title>OMSP — OpenMesha Social Protocol</title>
+            <style>
+              body { font-family: system-ui, sans-serif; background: #070a12; color: #e8eef5;
+                     display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+              a { color: #34E0D8; }
+            </style>
+          </head>
+          <body>
+            <p>Redirecting to <a href="omsp.html">OMSP live app</a>…</p>
+          </body>
+          </html>
+          EOF
+          # Integrity check
+          EXPECTED=1e9abd2b98deb6bc8789648195a04aad1ec871ecc9b568236de35a15924caa01
+          ACTUAL=$(sha256sum omsp.html | awk '{print $1}')
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "FATAL: omsp.html sha256 mismatch"
+            exit 1
+          fi
+          echo "omsp.html integrity OK"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+          # Only the live demo surface needs to be published
+          # (the full tree is fine; Pages will serve omsp.html + index)
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
