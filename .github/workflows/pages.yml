@@ -23,18 +23,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Extract exact audited package
+      - name: Extract exact audited package into clean site/
         run: |
-          unzip -q -o omsp-complete.zip
-          if [ -d omsp-complete ]; then
-            shopt -s dotglob
-            mv omsp-complete/* .
-            rmdir omsp-complete || true
-            shopt -u dotglob
+          set -euo pipefail
+          rm -rf site
+          mkdir -p site
+          unzip -q -o omsp-complete.zip -d /tmp/omsp-extract
+          # ZIP has top-level omsp-complete/
+          SRC=/tmp/omsp-extract/omsp-complete
+          if [ ! -f "$SRC/omsp.html" ]; then
+            # fallback if structure differs
+            SRC=/tmp/omsp-extract
           fi
-          # Ensure Pages entry points
-          touch .nojekyll
-          cat > index.html << 'EOF'
+          cp "$SRC/omsp.html" site/
+          touch site/.nojekyll
+          cat > site/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -52,14 +55,15 @@ jobs:
           </body>
           </html>
           EOF
-          # Integrity check
+          # Integrity check against the audited hash
           EXPECTED=1e9abd2b98deb6bc8789648195a04aad1ec871ecc9b568236de35a15924caa01
-          ACTUAL=$(sha256sum omsp.html | awk '{print $1}')
+          ACTUAL=$(sha256sum site/omsp.html | awk '{print $1}')
           if [ "$ACTUAL" != "$EXPECTED" ]; then
-            echo "FATAL: omsp.html sha256 mismatch"
+            echo "FATAL: omsp.html sha256 mismatch (got $ACTUAL)"
             exit 1
           fi
-          echo "omsp.html integrity OK"
+          echo "omsp.html integrity OK ($ACTUAL)"
+          ls -la site/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -67,9 +71,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
-          # Only the live demo surface needs to be published
-          # (the full tree is fine; Pages will serve omsp.html + index)
+          path: site
 
       - name: Deploy to GitHub Pages
         id: deployment
