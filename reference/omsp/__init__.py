@@ -1,8 +1,7 @@
-"""Open Mesha Social Protocol (OMSP) -- reference implementation."""
-from .config import Config, PROTOCOL_VERSIONS
-from .platform import OMSPPlatform
-from .sdk import AltMinimalClient, OMSPClient
+"""OMSP — OpenMesha Social Protocol reference implementation (Python 3.12 stdlib)."""
 
-__all__ = ["Config", "PROTOCOL_VERSIONS", "OMSPPlatform", "OMSPClient",
-           "AltMinimalClient"]
+from .core import Platform
+from .sdk import OMSPClient
+
+__all__ = ["Platform", "OMSPClient"]
 __version__ = "0.2.0"
