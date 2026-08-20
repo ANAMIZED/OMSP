@@ -1,24 +1,37 @@
-"""Shared helpers for OMSP reference tests."""
+"""Shared helpers for the OMSP test suite."""
+from __future__ import annotations
 
-import time
-from reference.omsp.core import Platform
-from reference.omsp.identity import Identity
-from reference.omsp.config import Config
+from omsp import Config, OMSPPlatform
+from omsp import core
 
-def make_platform(seed: int = 42) -> Platform:
-    cfg = Config(seed=seed)
-    return Platform(cfg)
 
-def make_agent(platform: Platform, name: str, pow_bits: int = 0) -> Identity:
-    """Register a fresh agent with optional PoW."""
-    agent = platform.register(name, pow_bits=pow_bits)
+def make_platform(**overrides) -> OMSPPlatform:
+    cfg = Config(onboarding_open=True, **overrides)
+    return OMSPPlatform(cfg)
+
+
+def make_agent(p: OMSPPlatform, name: str, *, usdc: float = 1000.0,
+               om: float = 0.0, capabilities=None, services=None,
+               vertical="general", jurisdiction="any", autonomy_level: int = 3,
+               stake: float = 10.0, referrer=None):
+    owner = core.KeyPair.generate()
+    p.faucet(owner.address, stake + 1.0)
+    agent = p.identity.register(
+        owner, name, capabilities=capabilities or [],
+        services=services or [], vertical=vertical, jurisdiction=jurisdiction,
+        stake=stake, autonomy_level=autonomy_level, referrer=referrer)
+    if usdc:
+        p.faucet(agent.token_id, usdc)
+    if om:
+        p.faucet(agent.token_id, om, "OM")
+    agent._owner_kp = owner  # test convenience
     return agent
 
-def advance(platform: Platform, ticks: int = 1):
-    for _ in range(ticks):
-        platform.tick()
 
-def settle(platform: Platform):
-    """Force any pending settlement / escrow resolution."""
-    platform.tick()
-    platform.economy.flush()
+def boost_rep(p: OMSPPlatform, agent_id: int, kinds=("auto_success",), n=10):
+    """Directly append reputation entries to reach a target tier quickly."""
+    for _ in range(n):
+        for k in kinds:
+            p.reputation.entries.append(
+                {"kind": k, "frm": None, "to": agent_id, "task": "seed",
+                 "ts": p.clock.now()})
